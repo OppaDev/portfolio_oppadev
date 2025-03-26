@@ -1,5 +1,5 @@
 ---
-import ThemeToggle from "./ThemeToggle.astro"
+import ThemeToggle from "./ThemeToggle.astro";
 
 const navItems = [
   {
@@ -22,87 +22,210 @@ const navItems = [
     label: "habilidades",
     url: "/#habilidades",
   },
-  {
-    title: "Contacto",
-    label: "contacto",
-    url: "mailto:jlobando2@espe.edu.ec",
-  },
-]
+  
+];
 ---
 
+<!-- Encabezado / Navbar -->
 <header
-  class="fixed top-0 z-10 flex items-center justify-center w-full mx-auto mt-2"
+  class="fixed top-0 left-0 z-50 w-full h-[80px] dark:bg-[#1a0b2e]/90 bg-slate-50/90 backdrop-blur-lg"
 >
   <nav
-    class="flex px-3 text-sm font-medium rounded-full text-gray-600 dark:text-gray-200 justify-center items-center"
+    class="h-full max-w-7xl mx-auto flex justify-between items-center px-4 py-3 text-sm font-medium text-gray-800 dark:text-white"
   >
-    {
-      navItems.map((link) => (
-        <a
-          class="relative block px-2 py-2 transition hover:text-yellow-500 dark:hover:text-yellow-400"
-          aria-label={link.label}
-          href={link.url}
+    <!-- Logo -->
+    <div class="flex items-center space-x-2">
+      <div class="text-2xl font-bold cursor-pointer">OppaDev</div>
+    </div>
+
+    <!-- Menú Desktop -->
+    <div class="hidden md:flex items-center space-x-6">
+      {
+        navItems.map((link) => (
+          <a
+            class="relative block px-4 lg:px-6 py-2 transition hover:text-yellow-500 dark:hover:text-yellow-400"
+            aria-label={link.label}
+            href={link.url}
+          >
+            {link.title}
+          </a>
+        ))
+      }
+    </div>
+
+    <!-- Controles Derecha -->
+    <div class="flex items-center gap-4">
+      <!-- Toggle de tema -->
+      <ThemeToggle />
+
+      <!-- Botón Mobile -->
+      <button
+        id="mobile-menu-button"
+        class="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        aria-label="Abrir menú"
+        aria-expanded="false"
+      >
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
         >
-          {link.title}
-        </a>
-      ))
-    }
-    <ThemeToggle />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 6h16M4 12h16m-16 6h16"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Menú Mobile -->
+    <div
+      id="mobile-menu"
+      class="hidden fixed top-[80px] left-0 w-full h-[calc(100vh-80px)]
+            bg-slate-50/95 dark:bg-[#1a0b2e]/95 backdrop-blur-lg md:hidden
+            transition-opacity"
+    >
+      <div class="flex flex-col items-center py-6 space-y-4">
+        {
+          navItems.map((link) => (
+            <a
+              class="w-3/4 text-center px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              href={link.url}
+              aria-label={link.label}
+            >
+              {link.title}
+            </a>
+          ))
+        }
+      </div>
+    </div>
   </nav>
 </header>
 
+<!-- Lógica de interactividad -->
 <script>
   document.addEventListener("astro:page-load", () => {
-    const sections = document.querySelectorAll("section")
-    const navItems = document.querySelectorAll("header nav a")
+    // Referencias
+    const mobileMenuButton = document.getElementById("mobile-menu-button");
+    const mobileMenu = document.getElementById("mobile-menu");
 
-    const callback = (entries: any[]) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          navItems.forEach((item) => {
-            if (item.getAttribute("aria-label") == entry.target.id) {
-              item.classList.add("text-yellow-500")
-            } else {
-              item.classList.remove("text-yellow-500")
-            }
-          })
-        }
-      })
+    // Función para abrir/cerrar el menú
+    const toggleMenu = () => {
+      if (!mobileMenu || !mobileMenuButton) return;
+      const isOpen = mobileMenu.classList.toggle("hidden");
+      mobileMenuButton.setAttribute("aria-expanded", (!isOpen).toString());
+      document.body.style.overflow = isOpen ? "auto" : "hidden";
+    };
+
+    // Evento click en el botón de menú
+    if (mobileMenuButton) {
+      mobileMenuButton.addEventListener("click", toggleMenu);
     }
+
+    // Cerrar menú al hacer click fuera
+    document.addEventListener("click", (e) => {
+      if (!mobileMenu || !mobileMenuButton) return;
+      const target = e.target as Node;
+      const isMenuClicked = mobileMenu.contains(target);
+      const isButtonClicked = mobileMenuButton.contains(target);
+
+      if (!isMenuClicked && !isButtonClicked) {
+        mobileMenu.classList.add("hidden");
+        mobileMenuButton.setAttribute("aria-expanded", "false");
+        document.body.style.overflow = "auto";
+      }
+    });
+
+    // Resaltar la sección activa
+    const sections = document.querySelectorAll("section");
+    const navLinks = document.querySelectorAll("header nav a");
+
+    const callback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry: IntersectionObserverEntry) => {
+        if (entry.isIntersecting) {
+          navLinks.forEach((item) => {
+            const sectionId = entry.target?.getAttribute("id");
+            if (item.getAttribute("aria-label") === sectionId) {
+              item.classList.add("text-yellow-500");
+            } else {
+              item.classList.remove("text-yellow-500");
+            }
+          });
+        }
+      });
+    };
 
     const observer = new IntersectionObserver(callback, {
       root: null,
       rootMargin: "0px",
       threshold: 0.3,
-    })
+    });
 
-    sections.forEach((section) => {
-      observer.observe(section)
-    })
+    sections.forEach((section) => observer.observe(section));
 
-    // Cleanup function
+    // Cerrar el menú mobile al hacer clic en cualquier enlace
+    if (mobileMenu) {
+      const mobileMenuLinks = mobileMenu.querySelectorAll("a");
+      mobileMenuLinks.forEach((link) => {
+        link.addEventListener("click", () => {
+          if (mobileMenu) {
+            mobileMenu.classList.add("hidden");
+          }
+          if (mobileMenuButton) {
+            mobileMenuButton.setAttribute("aria-expanded", "false");
+          }
+          document.body.style.overflow = "auto";
+        });
+      });
+    }
+
+    // Limpieza de observer cuando la pestaña se oculta
     document.onvisibilitychange = () => {
       if (document.visibilityState === "hidden") {
-        observer.disconnect()
+        observer.disconnect();
       } else {
-        sections.forEach((section) => {
-          observer.observe(section)
-        })
+        sections.forEach((section) => observer.observe(section));
       }
-    }
-  })
+    };
+  });
 </script>
 
 <style>
+  /* Animación de sombra al hacer scroll en el nav */
   nav {
-    animation: nav-shadown 1s linear both;
+    animation: nav-shadow 1s linear both;
     animation-timeline: scroll();
     animation-range: 0 100px;
   }
-
-  @keyframes nav-shadown {
+  @keyframes nav-shadow {
     to {
-      @apply shadow-lg ring-1 backdrop-blur dark:bg-gray-800/90 bg-white/50 ring-white/10;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  }
+
+  /* Animación para la entrada del menú mobile */
+  #mobile-menu {
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease;
+  }
+
+  #mobile-menu:not(.hidden) {
+    animation: slideIn 0.3s ease forwards;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 </style>
